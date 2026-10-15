@@ -1,0 +1,32 @@
+// 기본 영어 단어 데이터 — 기획서(v0.1) 3-7절에서 옮김
+export const ENGLISH_DEFAULT = {
+  book: "Let's TALK 4",
+  units: [
+    { unit: "Unit 02", words: [
+      { en: "cool", ko: ["시원한", "서늘한"], ex: "It is cool in the classroom." },
+      { en: "warm", ko: ["따뜻한", "따스한"], ex: "She puts the egg in warm water." },
+      { en: "thermometer", ko: ["온도계", "체온계"], ex: "This thermometer doesn't work." },
+      { en: "storm", ko: ["폭풍"], ex: "Oh no! It is a storm." },
+      { en: "paper", ko: ["종이"], ex: "She needs more paper." },
+      { en: "heavy", ko: ["무거운"], ex: "My backpack is so heavy." },
+      { en: "math", ko: ["수학"], ex: "He thinks math is difficult." },
+      { en: "instrument", ko: ["악기"], ex: "Can you play a musical instrument?" },
+      { en: "classroom", ko: ["교실"], ex: "It is cool in the classroom." },
+      { en: "backpack", ko: ["배낭"], ex: "My backpack is so heavy." },
+      { en: "band", ko: ["악단", "밴드"], ex: "Tiger plays a musical instrument in a band." },
+      { en: "tuba", ko: ["튜바"], ex: "He plays the tuba." },
+      { en: "finish", ko: ["끝내다", "마치다"], ex: "He has to practice, but first he needs to finish his math homework." },
+      { en: "quickly", ko: ["(속도를) 빨리", "빠르게"], ex: "He quickly writes his answers on the paper." },
+      { en: "early", ko: ["일찍", "초기에"], ex: "Tiger gets up early in the morning." },
+      { en: "temperature", ko: ["온도", "기온"], ex: "The temperature is lower." },
+      { en: "round", ko: ["둥근", "원형의"], ex: "She brings a round basket." },
+      { en: "basket", ko: ["바구니"], ex: "She brings a round basket." },
+      { en: "bright", ko: ["밝은", "빛나는"], ex: "I put the bright lamp on my desk." },
+      { en: "lamp", ko: ["전등", "램프"], ex: "I put the bright lamp on my desk." },
+      { en: "raise", ko: ["(동물을) 키우다", "기르다"], ex: "I raise a small dog and two cats." },
+      { en: "apartment", ko: ["아파트"], ex: "We live in a large apartment." },
+      { en: "curly", ko: ["곱슬곱슬한"], ex: "My brother has curly hair." },
+      { en: "brown", ko: ["갈색의"], ex: "She has beautiful brown eyes." },
+    ]},
+  ],
+};
