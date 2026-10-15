@@ -52,19 +52,32 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// 문장부호 제거(읽지 않음), 어절 배열로 분리
-export function splitWords(sentence) {
-  const cleaned = sentence.replace(/[,.!?]/g, "");
-  return cleaned.split(/\s+/).filter(Boolean);
+const PUNCT_NAMES = { ",": "쉼표", ".": "마침표", "!": "느낌표", "?": "물음표" };
+
+// 어절과 뒤에 붙은 문장부호(들)를 분리 — 문장부호는 이름(쉼표/마침표 등)으로 읽어준다
+export function tokenizeSentence(sentence) {
+  return sentence.split(/\s+/).filter(Boolean).map((token) => {
+    const m = token.match(/^(.*?)([,.!?]*)$/);
+    return { word: m[1], puncts: m[2] ? m[2].split("") : [] };
+  });
 }
 
 export async function speakKoreanSentence(sentence, { rate = 0.75, onWord } = {}) {
   const voiceName = await kvGet("voice.ko");
-  const words = splitWords(sentence);
-  for (let i = 0; i < words.length; i++) {
-    if (onWord) onWord(i, words.length);
-    await speakRaw(words[i], { voiceName, lang: "ko-KR", rate });
-    await sleep(400);
+  const tokens = tokenizeSentence(sentence);
+  for (let i = 0; i < tokens.length; i++) {
+    const { word, puncts } = tokens[i];
+    if (onWord) onWord(i, tokens.length);
+    if (word) {
+      await speakRaw(word, { voiceName, lang: "ko-KR", rate });
+      await sleep(puncts.length ? 200 : 400);
+    }
+    for (const p of puncts) {
+      const name = PUNCT_NAMES[p];
+      if (!name) continue;
+      await speakRaw(name, { voiceName, lang: "ko-KR", rate });
+      await sleep(400);
+    }
   }
 }
 
