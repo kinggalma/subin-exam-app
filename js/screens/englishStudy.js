@@ -1,16 +1,25 @@
 import { el, screen, topbar } from "../ui.js";
 import { navigate, getSessionData } from "../router.js";
-import { speakEnglish } from "../tts.js";
+import { speakEnglish, speakEnglishTwice, cancelSpeech } from "../tts.js";
+import { kvGet } from "../db.js";
 
 export async function render(container) {
   const session = getSessionData("/english/study");
   if (!session) { navigate("/english/units"); return; }
   let { unitLabel, words } = session;
+  const rate = Number(await kvGet("english.rate", 0.8));
 
   const starred = new Set();
   let i = 0;
+  let signal = { cancelled: false };
 
-  const main = screen([topbar(`공부하기 — ${unitLabel}`, { onBack: () => navigate("/english/units") })]);
+  function leaveStudy() {
+    signal.cancelled = true;
+    cancelSpeech();
+    navigate("/english/units");
+  }
+
+  const main = screen([topbar(`공부하기 — ${unitLabel}`, { onBack: leaveStudy })]);
   const body = el("div", { class: "word-card" });
   main.appendChild(body);
   container.appendChild(main);
@@ -30,8 +39,12 @@ export async function render(container) {
     body.appendChild(el("div", { class: "play-actions" }, actions));
   }
 
-  async function renderWord() {
+  function renderWord() {
     if (i >= words.length) { renderDone(); return; }
+    signal.cancelled = true;
+    cancelSpeech();
+    signal = { cancelled: false };
+    const mySignal = signal;
     const w = words[i];
     body.innerHTML = "";
     body.appendChild(el("div", { style: "color:#999" }, `${i + 1} / ${words.length}`));
@@ -43,7 +56,7 @@ export async function render(container) {
     } }, "⭐");
     body.appendChild(star);
     body.appendChild(el("div", { class: "row" }, [
-      el("button", { class: "icon-btn", onClick: () => speakEnglish(w.en, { rate: 0.9 }) }, "🔊"),
+      el("button", { class: "icon-btn", onClick: () => speakEnglishTwice(w.en, { rate, signal: mySignal }) }, "🔊"),
       el("button", { class: "icon-btn", onClick: () => speakEnglish(w.ex) }, "💬"),
     ]));
     body.appendChild(el("div", { class: "word-ex" }, w.ex));
@@ -60,13 +73,11 @@ export async function render(container) {
     body.appendChild(writeInput);
     body.appendChild(result);
     body.appendChild(el("div", { class: "play-actions" }, [
-      el("button", { class: "big-btn secondary", onClick: () => speakEnglish(w.en, { rate: 0.9 }) }, "🔁 다시 듣기"),
+      el("button", { class: "big-btn secondary", onClick: () => speakEnglishTwice(w.en, { rate, signal: mySignal }) }, "🔁 다시 듣기"),
       el("button", { class: "big-btn primary", onClick: () => { i += 1; renderWord(); } }, i === words.length - 1 ? "완료" : "다음 ▶"),
     ]));
 
-    await speakEnglish(w.en, { rate: 0.75 });
-    await new Promise((r) => setTimeout(r, 500));
-    await speakEnglish(w.en, { rate: 1 });
+    speakEnglishTwice(w.en, { rate, signal: mySignal });
   }
 
   renderWord();

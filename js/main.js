@@ -1,7 +1,8 @@
 import { registerRoute, startRouter } from "./router.js";
-import { seedDefaultsIfEmpty } from "./db.js";
+import { seedDefaultsIfEmpty, mergeEnglishMonthlyPacks } from "./db.js";
 import { KOREAN_DEFAULT } from "./data/korean-default.js";
 import { ENGLISH_DEFAULT } from "./data/english-default.js";
+import { MONTHLY_PACKS } from "./data/english-monthly.js";
 
 import * as home from "./screens/home.js";
 import * as koreanSelect from "./screens/koreanSelect.js";
@@ -29,6 +30,7 @@ registerRoute("/settings", settings.render);
 
 async function init() {
   await seedDefaultsIfEmpty(KOREAN_DEFAULT, ENGLISH_DEFAULT);
+  await mergeEnglishMonthlyPacks(MONTHLY_PACKS);
   startRouter(document.getElementById("app"));
 
   if ("serviceWorker" in navigator) {

@@ -88,6 +88,24 @@ export async function kvSet(key, value) {
   return DB.put("kv", { key, value });
 }
 
+export async function mergeEnglishMonthlyPacks(packs) {
+  const existing = await DB.getAll("english");
+  const existingNames = new Set(existing.map((u) => u.unit));
+  for (const pack of packs) {
+    for (const u of pack.units) {
+      if (existingNames.has(u.unit)) continue;
+      await DB.put("english", {
+        unit: u.unit,
+        book: u.book,
+        group: pack.monthLabel,
+        examDate: u.examDate || null,
+        words: u.words.map((w, i) => ({ no: i + 1, ...w })),
+      });
+      existingNames.add(u.unit);
+    }
+  }
+}
+
 export async function seedDefaultsIfEmpty(koreanDefault, englishDefault) {
   const existingKorean = await DB.getAll("korean");
   if (existingKorean.length === 0) {

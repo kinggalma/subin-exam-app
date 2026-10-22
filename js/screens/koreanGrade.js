@@ -26,7 +26,7 @@ export async function render(container) {
   function renderList() {
     list.innerHTML = "";
     items.forEach((item, i) => {
-      const row = el("div", { class: "result-row" });
+      const row = el("div", { class: "result-row", "data-idx": String(i) });
       row.appendChild(el("div", { class: "no" }, `${i + 1}`));
       const textWrap = el("div", { class: "text" }, [
         el("div", {}, item.text),
@@ -49,8 +49,15 @@ export async function render(container) {
       el("button", {
         class: "big-btn primary",
         onClick: async () => {
-          if (marks.some((m) => m === null)) {
-            showToast("모든 문제에 O 또는 X를 눌러주세요.");
+          const firstUnmarked = marks.findIndex((m) => m === null);
+          if (firstUnmarked !== -1) {
+            showToast(`${firstUnmarked + 1}번 문제에 O 또는 X를 눌러주세요.`);
+            const row = list.querySelector(`[data-idx="${firstUnmarked}"]`);
+            if (row) {
+              row.scrollIntoView({ behavior: "smooth", block: "center" });
+              row.classList.add("needs-mark");
+              setTimeout(() => row.classList.remove("needs-mark"), 1600);
+            }
             return;
           }
           const correctCount = marks.filter(Boolean).length;

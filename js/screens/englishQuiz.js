@@ -1,6 +1,7 @@
 import { el, screen, topbar, shuffle } from "../ui.js";
 import { navigate, getSessionData } from "../router.js";
-import { speakEnglish } from "../tts.js";
+import { speakEnglishTwice, cancelSpeech } from "../tts.js";
+import { kvGet } from "../db.js";
 import { addRecord } from "../records.js";
 import { showCelebration } from "../reward.js";
 
@@ -25,23 +26,35 @@ export async function render(container) {
   const { part, unitLabel, words } = session;
   const items = shuffle(words);
   const answers = new Array(items.length).fill("");
+  const rate = Number(await kvGet("english.rate", 0.8));
   let i = 0;
+  let signal = { cancelled: false };
 
-  const main = screen([topbar(`시험${part} — ${unitLabel}`, { onBack: () => navigate("/english/units") })]);
+  function leaveQuiz() {
+    signal.cancelled = true;
+    cancelSpeech();
+    navigate("/english/units");
+  }
+
+  const main = screen([topbar(`시험${part} — ${unitLabel}`, { onBack: leaveQuiz })]);
   const body = el("div", { class: "word-card" });
   main.appendChild(body);
   container.appendChild(main);
 
   function renderQuestion() {
+    signal.cancelled = true;
+    cancelSpeech();
+    signal = { cancelled: false };
+    const mySignal = signal;
     const w = items[i];
     body.innerHTML = "";
     body.appendChild(el("div", { style: "color:#999" }, `${i + 1} / ${items.length}`));
     if (part === 1) {
       body.appendChild(el("div", { class: "word-en" }, w.en));
-      body.appendChild(el("button", { class: "icon-btn", onClick: () => speakEnglish(w.en, { rate: 0.9 }) }, "🔊"));
     } else {
       body.appendChild(el("div", { class: "word-ko" }, w.ko.join(", ")));
     }
+    body.appendChild(el("button", { class: "icon-btn", onClick: () => speakEnglishTwice(w.en, { rate, signal: mySignal }) }, "🔊"));
     const input = el("input", {
       class: "answer-input",
       placeholder: part === 1 ? "뜻을 한글로 쓰세요" : "영어 단어를 쓰세요",
@@ -57,13 +70,20 @@ export async function render(container) {
     setTimeout(() => input.focus(), 50);
 
     function goNext() {
+      signal.cancelled = true;
+      cancelSpeech();
       answers[i] = input.value;
       i += 1;
       if (i >= items.length) finish(); else renderQuestion();
     }
+
+    // 미국식 발음으로 2번 천천히 자동 재생
+    speakEnglishTwice(w.en, { rate, signal: mySignal });
   }
 
   async function finish() {
+    signal.cancelled = true;
+    cancelSpeech();
     const marks = items.map((w, idx) => (part === 1 ? isKoCorrect(answers[idx], w.ko) : isEnCorrect(answers[idx], w.en)));
     const correctCount = marks.filter(Boolean).length;
     const score = Math.round((correctCount / items.length) * 100);

@@ -84,9 +84,20 @@ export async function speakKoreanSentence(sentence, { rate = 0.75, onWord, signa
   }
 }
 
-export async function speakEnglish(text, { rate = 1 } = {}) {
+export async function speakEnglish(text, { rate = 1, signal } = {}) {
+  if (signal && signal.cancelled) return;
   const voiceName = await kvGet("voice.en");
+  if (signal && signal.cancelled) return;
   await speakRaw(text, { voiceName, lang: "en-US", rate });
+}
+
+// 미국식 발음으로 천천히 2번 읽어준다 (단어 시험/공부 화면 공용)
+export async function speakEnglishTwice(text, { rate = 0.8, signal, pauseMs = 600 } = {}) {
+  await speakEnglish(text, { rate, signal });
+  if (signal && signal.cancelled) return;
+  await new Promise((r) => setTimeout(r, pauseMs));
+  if (signal && signal.cancelled) return;
+  await speakEnglish(text, { rate, signal });
 }
 
 export function cancelSpeech() {

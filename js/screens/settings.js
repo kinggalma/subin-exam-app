@@ -82,6 +82,9 @@ export async function render(container) {
   const rateInput = el("input", { type: "range", min: "0.6", max: "1.1", step: "0.05", value: String(await kvGet("korean.rate", 0.75)) });
   const rateLabel = el("span", {}, String(await kvGet("korean.rate", 0.75)));
   rateInput.addEventListener("input", () => { rateLabel.textContent = rateInput.value; });
+  const enRateInput = el("input", { type: "range", min: "0.5", max: "1.1", step: "0.05", value: String(await kvGet("english.rate", 0.8)) });
+  const enRateLabel = el("span", {}, String(await kvGet("english.rate", 0.8)));
+  enRateInput.addEventListener("input", () => { enRateLabel.textContent = enRateInput.value; });
 
   voiceCard.appendChild(el("label", { class: "field" }, [
     "국어(한국어) 음성",
@@ -97,12 +100,17 @@ export async function render(container) {
     el("span", {}, ["받아쓰기 읽는 속도 ", rateLabel]),
     rateInput,
   ]));
+  voiceCard.appendChild(el("label", { class: "field" }, [
+    el("span", {}, ["영어 단어 읽는 속도 ", enRateLabel]),
+    enRateInput,
+  ]));
   voiceCard.appendChild(el("button", {
     class: "big-btn primary",
     onClick: async () => {
       await kvSet("voice.ko", koSelect.value);
       await kvSet("voice.en", enSelect.value);
       await kvSet("korean.rate", Number(rateInput.value));
+      await kvSet("english.rate", Number(enRateInput.value));
       showToast("저장했어요!");
     },
   }, "음성 설정 저장"));

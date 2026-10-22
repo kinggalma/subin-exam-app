@@ -1,4 +1,4 @@
-const CACHE_NAME = "subin-app-v1";
+const CACHE_NAME = "subin-app-v2";
 const PRECACHE_URLS = [
   "./",
   "./index.html",
@@ -13,6 +13,8 @@ const PRECACHE_URLS = [
   "./js/reward.js",
   "./js/data/korean-default.js",
   "./js/data/english-default.js",
+  "./js/data/english-monthly.js",
+  "./js/data/english-2026-10.js",
   "./js/screens/home.js",
   "./js/screens/koreanSelect.js",
   "./js/screens/koreanPlay.js",
@@ -47,18 +49,19 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET" || !request.url.startsWith(self.location.origin)) return;
 
+  // 네트워크를 먼저 시도해서 앱 수정사항이 항상 바로 반영되도록 하고,
+  // 오프라인일 때만 캐시된 버전으로 대체한다(캐시 우선이면 수정해도 반영 안 되는 문제가 있었음).
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => (request.mode === "navigate" ? caches.match("./index.html") : undefined));
-    })
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() =>
+        caches.match(request).then((cached) => cached || (request.mode === "navigate" ? caches.match("./index.html") : undefined))
+      )
   );
 });

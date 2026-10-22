@@ -50,7 +50,7 @@ export function showToast(message) {
 }
 
 export function fireConfetti(container) {
-  const emojis = ["🎉", "⭐", "🎊", "✨", "🏆"];
+  const emojis = ["🎉", "⭐", "🎊", "✨", "🏆", "💖", "🎤", "🎶"];
   const wrap = el("div", { class: "confetti" });
   for (let i = 0; i < 40; i++) {
     const span = el("span", {

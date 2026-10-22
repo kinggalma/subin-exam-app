@@ -4,11 +4,13 @@
   --blue: #3ca9ff;
   --green: #3ad29f;
   --purple: #9b6bff;
+  --gold: #ffd166;
   --bg: #fff7f0;
   --text: #2d2a32;
   --card: #ffffff;
   --shadow: 0 6px 18px rgba(0,0,0,0.12);
   --radius: 22px;
+  --holo: linear-gradient(115deg, #ff9ad5, #ffd166, #9ad6ff, #c6a8ff, #ff9ad5);
   color-scheme: light;
 }
 
@@ -17,7 +19,12 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 8% 12%, rgba(255, 214, 102, 0.22), transparent 38%),
+    radial-gradient(circle at 88% 18%, rgba(155, 107, 255, 0.18), transparent 42%),
+    radial-gradient(circle at 15% 88%, rgba(60, 169, 255, 0.16), transparent 38%),
+    radial-gradient(circle at 92% 85%, rgba(255, 93, 143, 0.18), transparent 40%),
+    var(--bg);
   color: var(--text);
   font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   overscroll-behavior: none;
@@ -96,13 +103,40 @@ button {
 .big-btn.secondary { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; }
 .big-btn.ghost { background: transparent; box-shadow: none; border: 2px dashed #ccc; color: #888; }
 
+.big-btn.primary, .big-btn.secondary {
+  position: relative;
+  overflow: hidden;
+}
+.big-btn.primary::after, .big-btn.secondary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 25%, rgba(255,255,255,0.55) 42%, transparent 58%);
+  background-size: 250% 100%;
+  animation: holo-shimmer 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes holo-shimmer {
+  0% { background-position: 180% 0; }
+  55% { background-position: -60% 0; }
+  100% { background-position: -60% 0; }
+}
+
 .home-grid {
   display: grid;
   gap: 16px;
   grid-template-columns: 1fr 1fr;
   margin-top: 12px;
 }
-.home-grid .big-btn { flex-direction: column; min-height: 140px; font-size: 1.5rem; }
+.home-grid .big-btn { flex-direction: column; min-height: 140px; font-size: 1.5rem; position: relative; }
+.home-grid .big-btn::before {
+  content: "✦";
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  font-size: 1rem;
+  opacity: 0.55;
+}
 .home-grid .emoji { font-size: 2.6rem; }
 .home-grid .span-2 { grid-column: 1 / -1; min-height: 90px; flex-direction: row; font-size: 1.3rem; }
 
@@ -200,6 +234,23 @@ button {
 .ox-btn.o.active { background: var(--green); color: #fff; }
 .ox-btn.x.active { background: var(--pink); color: #fff; }
 
+.result-row.needs-mark { animation: needs-mark-pulse 0.4s ease-in-out 3; }
+@keyframes needs-mark-pulse {
+  0%, 100% { box-shadow: var(--shadow); }
+  50% { box-shadow: 0 0 0 4px var(--pink), var(--shadow); }
+}
+
+.unit-group-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--purple);
+  margin: 18px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.unit-group-title::before { content: "✨"; }
+
 .score-banner {
   text-align: center;
   padding: 18px;
@@ -214,7 +265,9 @@ button {
 .celebrate-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.75);
+  background:
+    radial-gradient(circle at 50% 15%, rgba(255, 214, 102, 0.3), transparent 55%),
+    rgba(20, 10, 30, 0.88);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -225,7 +278,21 @@ button {
   text-align: center;
   padding: 20px;
 }
-.celebrate-overlay h2 { font-size: 2.4rem; margin: 0; }
+.celebrate-overlay h2 {
+  font-size: 2.4rem;
+  margin: 0;
+  background: var(--holo);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: holo-move 4s ease infinite;
+}
+@keyframes holo-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 .confetti {
   position: fixed;
   inset: 0;
