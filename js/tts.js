@@ -62,17 +62,20 @@ export function tokenizeSentence(sentence) {
   });
 }
 
-export async function speakKoreanSentence(sentence, { rate = 0.75, onWord } = {}) {
+export async function speakKoreanSentence(sentence, { rate = 0.75, onWord, signal } = {}) {
   const voiceName = await kvGet("voice.ko");
   const tokens = tokenizeSentence(sentence);
   for (let i = 0; i < tokens.length; i++) {
+    if (signal && signal.cancelled) return;
     const { word, puncts } = tokens[i];
     if (onWord) onWord(i, tokens.length);
     if (word) {
       await speakRaw(word, { voiceName, lang: "ko-KR", rate });
+      if (signal && signal.cancelled) return;
       await sleep(puncts.length ? 200 : 400);
     }
     for (const p of puncts) {
+      if (signal && signal.cancelled) return;
       const name = PUNCT_NAMES[p];
       if (!name) continue;
       await speakRaw(name, { voiceName, lang: "ko-KR", rate });

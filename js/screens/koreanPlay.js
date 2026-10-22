@@ -30,10 +30,10 @@ export async function render(container) {
   container.appendChild(main);
 
   async function runItem(i) {
-    cancelToken.cancelled = false;
     const sentence = items[i].text;
     const readText = items[i].read || sentence;
     const no = i + 1;
+    let itemSignal = { cancelled: false };
 
     const timerSpan = el("span", {}, "읽는 중");
     const ring = el("div", { class: "play-timer-ring", style: "--pct:100" }, timerSpan);
@@ -52,13 +52,13 @@ export async function render(container) {
     let countdownHandle = null;
     const sig = {};
 
-    async function doReadingSequence() {
+    async function doReadingSequence(signal) {
       timerSpan.textContent = "듣는 중 🔊";
-      await speakKoreanSentence(readText, { rate });
-      if (cancelToken.cancelled) return;
+      await speakKoreanSentence(readText, { rate, signal });
+      if (signal.cancelled || cancelToken.cancelled) return;
       await sleep(2000, sig);
-      if (cancelToken.cancelled) return;
-      await speakKoreanSentence(readText, { rate });
+      if (signal.cancelled || cancelToken.cancelled) return;
+      await speakKoreanSentence(readText, { rate, signal });
     }
 
     async function startCountdown() {
@@ -79,14 +79,18 @@ export async function render(container) {
     }
 
     async function replay() {
+      itemSignal.cancelled = true;
+      cancelSpeech();
       if (countdownHandle) clearInterval(countdownHandle);
-      await doReadingSequence();
-      if (!cancelToken.cancelled) startCountdown();
+      itemSignal = { cancelled: false };
+      await doReadingSequence(itemSignal);
+      if (!cancelToken.cancelled && !itemSignal.cancelled) startCountdown();
     }
 
     function advance() {
       if (advanced) return;
       advanced = true;
+      itemSignal.cancelled = true;
       if (countdownHandle) clearInterval(countdownHandle);
       if (input) answers[i] = input.value;
       cancelSpeech();
@@ -99,8 +103,8 @@ export async function render(container) {
     const donePromise = new Promise((resolve) => { resolveItem = resolve; });
     // 읽기는 백그라운드로 진행한다 — 음성 콜백이 멈추더라도(일부 브라우저의 알려진 버그)
     // "다음" 버튼은 즉시 반응해야 하므로 이 흐름을 기다리지 않는다.
-    doReadingSequence().then(() => {
-      if (!cancelToken.cancelled && !advanced) startCountdown();
+    doReadingSequence(itemSignal).then(() => {
+      if (!cancelToken.cancelled && !itemSignal.cancelled && !advanced) startCountdown();
     });
     await donePromise;
   }
