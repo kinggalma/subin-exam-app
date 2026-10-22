@@ -52,7 +52,7 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-const PUNCT_NAMES = { ",": "쉼표", ".": "마침표", "!": "느낌표", "?": "물음표" };
+const PUNCT_NAMES = { ",": "쉼표", ".": "마침표 점", "!": "느낌표", "?": "물음표" };
 
 // 어절과 뒤에 붙은 문장부호(들)를 분리 — 문장부호는 이름(쉼표/마침표 등)으로 읽어준다
 export function tokenizeSentence(sentence) {
