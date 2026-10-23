@@ -31,6 +31,23 @@ function parseEnglishPaste(text) {
   return units;
 }
 
+function parseYoutubeId(input) {
+  const raw = (input || "").trim();
+  if (/^[\w-]{11}$/.test(raw)) return raw; // 영상 ID를 바로 입력한 경우
+  try {
+    const url = new URL(raw);
+    if (url.hostname.includes("youtu.be")) return url.pathname.slice(1).split("/")[0] || null;
+    if (url.hostname.includes("youtube.com")) {
+      if (url.pathname === "/watch") return url.searchParams.get("v");
+      if (url.pathname.startsWith("/embed/")) return url.pathname.split("/embed/")[1].split("/")[0];
+      if (url.pathname.startsWith("/shorts/")) return url.pathname.split("/shorts/")[1].split("/")[0];
+    }
+  } catch {
+    // URL 형식이 아니면 아래에서 null 반환
+  }
+  return null;
+}
+
 function renderGate(container, onUnlock) {
   const input = el("input", { class: "answer-input", type: "password", inputmode: "numeric", maxlength: "4", placeholder: "보호자 비밀번호 4자리" });
   const msg = el("div", { style: "color:var(--pink);min-height:20px" });
@@ -154,11 +171,38 @@ export async function render(container) {
   const rewardCard = el("div", { class: "card" });
   rewardCard.appendChild(el("div", { class: "section-title" }, "🎁 100점 보상 영상"));
   const existingVideos = await DB.getAll("rewards");
-  const videoList = el("div", {}, existingVideos.map((v) => el("div", { class: "record-item" }, [
-    el("div", {}, v.name),
-    el("button", { class: "icon-btn", onClick: async () => { await DB.delete("rewards", v.id); navigate("/settings"); } }, "🗑"),
-  ])));
+  const videoList = el("div", {}, existingVideos.map((v) => {
+    const startInput = el("input", { type: "number", min: "0", value: String(v.start || ""), placeholder: "0", style: "width:64px" });
+    const secInput = el("input", { type: "number", min: "3", max: "120", value: String(v.seconds || ""), placeholder: "기본", style: "width:64px" });
+    return el("div", { class: "record-item" }, [
+      el("div", {}, v.youtubeId ? `▶ YouTube: ${v.name}` : v.name),
+      el("label", { style: "display:flex;align-items:center;gap:4px;font-size:0.85rem;color:#999" }, ["시작(초)", startInput]),
+      el("label", { style: "display:flex;align-items:center;gap:4px;font-size:0.85rem;color:#999" }, ["재생(초)", secInput]),
+      el("button", {
+        class: "icon-btn",
+        onClick: async () => {
+          await DB.put("rewards", { ...v, start: Number(startInput.value) || undefined, seconds: Number(secInput.value) || undefined });
+          showToast("저장했어요!");
+          navigate("/settings");
+        },
+      }, "💾"),
+      el("button", { class: "icon-btn", onClick: async () => { await DB.delete("rewards", v.id); navigate("/settings"); } }, "🗑"),
+    ]);
+  }));
   const fileInput = el("input", { type: "file", accept: "video/*,audio/*", multiple: "true" });
+  const startDefaultInput = el("input", { type: "number", min: "0", value: "0", style: "width:64px" });
+  const secDefaultInput = el("input", { type: "number", min: "3", max: "120", value: "10", style: "width:64px" });
+  const ytInput = el("input", { type: "text", placeholder: "https://youtu.be/... 또는 https://www.youtube.com/watch?v=..." });
+  const ytAddBtn = el("button", {
+    class: "big-btn secondary",
+    onClick: async () => {
+      const id = parseYoutubeId(ytInput.value);
+      if (!id) { showToast("유튜브 링크를 확인해 주세요."); return; }
+      await DB.put("rewards", { name: id, youtubeId: id, start: Number(startDefaultInput.value) || undefined, seconds: Number(secDefaultInput.value) || undefined });
+      showToast("유튜브 영상을 추가했어요!");
+      navigate("/settings");
+    },
+  }, "유튜브 추가");
   const pickModeSelect = el("select", {}, [el("option", { value: "random" }, "랜덤 재생"), el("option", { value: "order" }, "순서대로 재생")]);
   pickModeSelect.value = await kvGet("reward.pickMode", "random");
   const freqSelect = el("select", {}, [el("option", { value: "always" }, "100점마다 매번"), el("option", { value: "oncePerDay" }, "하루 1회만")]);
@@ -166,15 +210,18 @@ export async function render(container) {
   const maxSecInput = el("input", { type: "number", min: "10", value: String(await kvGet("reward.maxSeconds", 180)) });
 
   rewardCard.appendChild(videoList);
+  rewardCard.appendChild(el("label", { class: "field" }, ["새로 추가할 영상 시작 시간(초, 춤/노래 하이라이트 지점)", startDefaultInput]));
+  rewardCard.appendChild(el("label", { class: "field" }, ["새로 추가할 영상 재생 길이(초)", secDefaultInput]));
   rewardCard.appendChild(el("label", { class: "field" }, ["영상/음악 파일 추가", fileInput]));
+  rewardCard.appendChild(el("label", { class: "field" }, ["유튜브 링크 추가 (인터넷 필요)", ytInput, ytAddBtn]));
   rewardCard.appendChild(el("label", { class: "field" }, ["여러 개일 때 재생 방식", pickModeSelect]));
   rewardCard.appendChild(el("label", { class: "field" }, ["재생 빈도", freqSelect]));
-  rewardCard.appendChild(el("label", { class: "field" }, ["영상 최대 길이(초)", maxSecInput]));
+  rewardCard.appendChild(el("label", { class: "field" }, ["영상 기본 최대 길이(초, 개별 설정이 없을 때)", maxSecInput]));
   rewardCard.appendChild(el("button", {
     class: "big-btn primary",
     onClick: async () => {
       for (const file of fileInput.files) {
-        await DB.put("rewards", { name: file.name, blob: file });
+        await DB.put("rewards", { name: file.name, blob: file, start: Number(startDefaultInput.value) || undefined, seconds: Number(secDefaultInput.value) || undefined });
       }
       await kvSet("reward.pickMode", pickModeSelect.value);
       await kvSet("reward.frequency", freqSelect.value);

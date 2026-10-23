@@ -277,21 +277,48 @@ button {
   gap: 20px;
   text-align: center;
   padding: 20px;
+  overflow: hidden;
+}
+.celebrate-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.65), transparent 60%);
+  animation: flash-pulse 1.1s ease-out 2;
+  pointer-events: none;
+}
+@keyframes flash-pulse {
+  0% { opacity: 1; transform: scale(0.2); }
+  100% { opacity: 0; transform: scale(1.8); }
+}
+.celebrate-trophy {
+  font-size: 4.2rem;
+  animation: trophy-bounce 0.9s ease-in-out infinite, pop-in 0.5s cubic-bezier(.34,1.56,.64,1);
+  filter: drop-shadow(0 6px 14px rgba(255, 214, 102, 0.6));
+}
+@keyframes trophy-bounce {
+  0%, 100% { transform: translateY(0) scale(1) rotate(-4deg); }
+  50% { transform: translateY(-16px) scale(1.1) rotate(4deg); }
 }
 .celebrate-overlay h2 {
-  font-size: 2.4rem;
+  font-size: 2.6rem;
   margin: 0;
   background: var(--holo);
   background-size: 300% 300%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: holo-move 4s ease infinite;
+  animation: holo-move 4s ease infinite, pop-in 0.6s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes holo-move {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+@keyframes pop-in {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.18) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 .confetti {
   position: fixed;
@@ -303,12 +330,71 @@ button {
 .confetti span {
   position: absolute;
   top: -10px;
-  font-size: 1.6rem;
   animation: fall linear forwards;
 }
-@keyframes fall { to { transform: translateY(110vh) rotate(360deg); opacity: 0.3; } }
+@keyframes fall {
+  to { transform: translate(var(--drift, 0px), 110vh) rotate(var(--spin, 360deg)); opacity: 0.3; }
+}
 
-video.reward-video { width: min(90vw, 480px); border-radius: 16px; box-shadow: 0 0 40px rgba(255,255,255,0.3); }
+.fireworks {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 49;
+}
+.firework-burst {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fw-color);
+  opacity: 0;
+  animation: firework-pop 1s ease-out forwards;
+}
+@keyframes firework-pop {
+  0% { opacity: 1; transform: scale(0.4); box-shadow: 0 0 0 0 var(--fw-color); }
+  18% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+    box-shadow:
+      0 -46px 0 -1px var(--fw-color),
+      32px -32px 0 -1px var(--fw-color),
+      46px 0 0 -1px var(--fw-color),
+      32px 32px 0 -1px var(--fw-color),
+      0 46px 0 -1px var(--fw-color),
+      -32px 32px 0 -1px var(--fw-color),
+      -46px 0 0 -1px var(--fw-color),
+      -32px -32px 0 -1px var(--fw-color);
+  }
+}
+
+.celebrate-sub {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffe3f3;
+  text-shadow: 0 0 10px rgba(255, 150, 220, 0.8);
+  animation: sub-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes sub-shimmer {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+.reward-video {
+  display: block;
+  width: min(90vw, 480px);
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(255,255,255,0.3);
+  overflow: hidden;
+  background: #000;
+}
+.reward-video iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+}
 
 .word-card {
   flex: 1;
