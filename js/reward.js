@@ -138,9 +138,11 @@ async function playYoutubeOverlay(videoRow) {
     ]);
     let done = false;
     let player = null;
+    let watchdog = null;
     function finish() {
       if (done) return;
       done = true;
+      if (watchdog) clearInterval(watchdog);
       try { if (player && player.destroy) player.destroy(); } catch { /* 이미 파괴된 경우 무시 */ }
       overlay.remove();
       resolve();
@@ -148,6 +150,8 @@ async function playYoutubeOverlay(videoRow) {
     document.body.appendChild(overlay);
     blastCelebrationFx();
     if (window.YT && window.YT.Player) {
+      let lastTime = -1;
+      let stallTicks = 0;
       player = new window.YT.Player(playerHost.id, {
         videoId: videoRow.youtubeId,
         width: "480",
@@ -174,6 +178,20 @@ async function playYoutubeOverlay(videoRow) {
           },
         },
       });
+      // 재생 중이라고 표시되는데도 재생 시간이 실제로는 멈춰있는 경우(스트리밍 중간에 막힘)를 감지해서
+      // 다시 재생 버튼을 보여준다
+      watchdog = setInterval(() => {
+        if (done || !player || !player.getPlayerState) return;
+        if (player.getPlayerState() !== window.YT.PlayerState.PLAYING) return;
+        const t = player.getCurrentTime();
+        if (t === lastTime) {
+          stallTicks += 1;
+          if (stallTicks >= 2) playFallbackBtn.style.display = "";
+        } else {
+          stallTicks = 0;
+        }
+        lastTime = t;
+      }, 1500);
       playFallbackBtn.addEventListener("click", () => {
         player.playVideo();
         player.unMute();
