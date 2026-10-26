@@ -127,10 +127,13 @@ async function playYoutubeOverlay(videoRow) {
   await loadYoutubeIframeApi();
   return new Promise((resolve) => {
     const playerHost = el("div", { class: "reward-video", id: `yt-player-${Date.now()}` });
+    // 자동재생이 끝내 막히는 환경(브라우저/확장프로그램 차이)에 대비한 수동 재생 버튼 — 평소엔 숨겨둔다
+    const playFallbackBtn = el("button", { class: "big-btn primary", style: "display:none" }, "▶ 영상 재생하기");
     const overlay = el("div", { class: "celebrate-overlay" }, [
       el("div", { class: "celebrate-trophy" }, "🏆"),
       el("h2", {}, "100점! 축하해요 🎉"),
       playerHost,
+      playFallbackBtn,
       el("button", { class: "big-btn primary", onClick: finish }, "닫기"),
     ]);
     let done = false;
@@ -155,12 +158,26 @@ async function playYoutubeOverlay(videoRow) {
         playerVars: { autoplay: 1, mute: 1, playsinline: 1, rel: 0, start: startAt, origin: window.location.origin },
         events: {
           // playerVars의 autoplay만으로는 재생이 안 되는 경우가 있어 준비되면 명시적으로 재생시킨다
-          onReady: (e) => { e.target.playVideo(); },
+          onReady: (e) => {
+            e.target.playVideo();
+            // 그래도 재생이 안 되는 환경(광고 차단 확장 등)에 대비해 잠시 후 상태를 확인하고
+            // 안 움직이고 있으면 수동 재생 버튼을 보여준다
+            setTimeout(() => {
+              if (!done && e.target.getPlayerState && e.target.getPlayerState() !== window.YT.PlayerState.PLAYING) {
+                playFallbackBtn.style.display = "";
+              }
+            }, 1500);
+          },
           onStateChange: (e) => {
-            if (e.data === window.YT.PlayerState.PLAYING) player.unMute();
+            if (e.data === window.YT.PlayerState.PLAYING) { player.unMute(); playFallbackBtn.style.display = "none"; }
             if (e.data === window.YT.PlayerState.ENDED) finish();
           },
         },
+      });
+      playFallbackBtn.addEventListener("click", () => {
+        player.playVideo();
+        player.unMute();
+        playFallbackBtn.style.display = "none";
       });
     } else {
       // 유튜브 API를 못 불러온 경우(오프라인 등) 일반 iframe으로 대신 재생 — 자동 종료 감지는 안 됨
