@@ -150,7 +150,9 @@ async function playYoutubeOverlay(videoRow) {
         width: "480",
         height: "270",
         // 자동재생은 무음일 때만 브라우저가 보장해주므로 무음으로 시작한 뒤 재생되면 소리를 켠다
-        playerVars: { autoplay: 1, mute: 1, playsinline: 1, rel: 0, start: startAt },
+        // origin을 명시하지 않으면 일부 환경(특히 localhost)에서 플레이어가 생성만 되고
+        // playVideo() 같은 postMessage 명령에 응답하지 않는 경우가 있다
+        playerVars: { autoplay: 1, mute: 1, playsinline: 1, rel: 0, start: startAt, origin: window.location.origin },
         events: {
           // playerVars의 autoplay만으로는 재생이 안 되는 경우가 있어 준비되면 명시적으로 재생시킨다
           onReady: (e) => { e.target.playVideo(); },
