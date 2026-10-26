@@ -52,12 +52,16 @@ export async function render(container) {
     return units.filter((u) => selected.has(u.unit)).flatMap((u) => u.words);
   }
 
-  // 실제 기말고사(Final Word Test) 형식: 각 유닛의 앞 절반은 영→한, 뒤 절반은 한→영으로 출제된다
+  // 실제 기말고사(Final Word Test) 형식: 24문제 단위로 앞 12개는 영→한, 뒤 12개는 한→영이 반복된다
+  // (예: 복학기 72단어 시험지는 1-12, 25-36, 49-60은 영→한 / 13-24, 37-48, 61-72는 한→영)
   function getMixedWords() {
-    return units.filter((u) => selected.has(u.unit)).flatMap((u) => {
-      const half = Math.ceil(u.words.length / 2);
-      return u.words.map((w) => ({ ...w, dir: w.no <= half ? "en2ko" : "ko2en" }));
-    });
+    const BLOCK = 24;
+    return units.filter((u) => selected.has(u.unit)).flatMap((u) =>
+      u.words.map((w) => {
+        const posInBlock = ((w.no - 1) % BLOCK) + 1;
+        return { ...w, dir: posInBlock <= BLOCK / 2 ? "en2ko" : "ko2en" };
+      })
+    );
   }
 
   container.appendChild(
