@@ -78,7 +78,7 @@ async function playVideoOverlay(videoRow) {
   const startAt = videoStart(videoRow);
   return new Promise((resolve) => {
     const url = URL.createObjectURL(videoRow.blob);
-    const videoEl = el("video", { class: "reward-video", src: url, controls: "true", playsinline: "true" });
+    const videoEl = el("video", { class: "reward-video", src: url, controls: "true", playsinline: "true", muted: "true", autoplay: "true" });
     const overlay = el("div", { class: "celebrate-overlay" }, [
       el("div", { class: "celebrate-trophy" }, "🏆"),
       el("h2", {}, "100점! 축하해요 🎉"),
@@ -95,7 +95,8 @@ async function playVideoOverlay(videoRow) {
     }
     videoEl.addEventListener("loadedmetadata", () => {
       if (startAt > 0) videoEl.currentTime = Math.min(startAt, Math.max(videoEl.duration - 1, 0));
-      videoEl.play();
+      // 무음으로 먼저 재생을 보장하고, 재생이 시작되면 소리를 켠다 (브라우저 자동재생 정책 우회)
+      videoEl.play().then(() => { videoEl.muted = false; }).catch(() => {});
     }, { once: true });
     videoEl.addEventListener("ended", finish);
     document.body.appendChild(overlay);
@@ -148,13 +149,19 @@ async function playYoutubeOverlay(videoRow) {
         videoId: videoRow.youtubeId,
         width: "480",
         height: "270",
-        playerVars: { autoplay: 1, playsinline: 1, rel: 0, start: startAt },
-        events: { onStateChange: (e) => { if (e.data === window.YT.PlayerState.ENDED) finish(); } },
+        // 자동재생은 무음일 때만 브라우저가 보장해주므로 무음으로 시작한 뒤 재생되면 소리를 켠다
+        playerVars: { autoplay: 1, mute: 1, playsinline: 1, rel: 0, start: startAt },
+        events: {
+          onStateChange: (e) => {
+            if (e.data === window.YT.PlayerState.PLAYING) player.unMute();
+            if (e.data === window.YT.PlayerState.ENDED) finish();
+          },
+        },
       });
     } else {
       // 유튜브 API를 못 불러온 경우(오프라인 등) 일반 iframe으로 대신 재생 — 자동 종료 감지는 안 됨
       playerHost.appendChild(el("iframe", {
-        src: `https://www.youtube.com/embed/${videoRow.youtubeId}?autoplay=1&playsinline=1&start=${startAt}`,
+        src: `https://www.youtube.com/embed/${videoRow.youtubeId}?autoplay=1&mute=1&playsinline=1&start=${startAt}`,
         allow: "autoplay; encrypted-media",
         allowfullscreen: "true",
       }));

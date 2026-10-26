@@ -24,8 +24,13 @@ export async function render(container) {
   const session = getSessionData("/english/quiz");
   if (!session) { navigate("/english/units"); return; }
   const { part, unitLabel, words } = session;
-  const items = shuffle(words);
+  // 실전 시험(mixed)은 문항별 출제 방향이 정해져 있으므로 실제 시험지 순서 그대로 둔다
+  const items = part === "mixed" ? words : shuffle(words);
   const answers = new Array(items.length).fill("");
+  const titleLabel = part === "mixed" ? "실전 시험" : `시험${part}`;
+  function showsEnglish(w) {
+    return part === "mixed" ? w.dir === "en2ko" : part === 1;
+  }
   const rate = Number(await kvGet("english.rate", 0.8));
   let i = 0;
   let signal = { cancelled: false };
@@ -36,7 +41,7 @@ export async function render(container) {
     navigate("/english/units");
   }
 
-  const main = screen([topbar(`시험${part} — ${unitLabel}`, { onBack: leaveQuiz })]);
+  const main = screen([topbar(`${titleLabel} — ${unitLabel}`, { onBack: leaveQuiz })]);
   const body = el("div", { class: "word-card" });
   main.appendChild(body);
   container.appendChild(main);
@@ -47,9 +52,10 @@ export async function render(container) {
     signal = { cancelled: false };
     const mySignal = signal;
     const w = items[i];
+    const showEnglish = showsEnglish(w);
     body.innerHTML = "";
     body.appendChild(el("div", { style: "color:#999" }, `${i + 1} / ${items.length}`));
-    if (part === 1) {
+    if (showEnglish) {
       body.appendChild(el("div", { class: "word-en" }, w.en));
     } else {
       body.appendChild(el("div", { class: "word-ko" }, w.ko.join(", ")));
@@ -57,7 +63,7 @@ export async function render(container) {
     body.appendChild(el("button", { class: "icon-btn", onClick: () => speakEnglishTwice(w.en, { rate, signal: mySignal }) }, "🔊"));
     const input = el("input", {
       class: "answer-input",
-      placeholder: part === 1 ? "뜻을 한글로 쓰세요" : "영어 단어를 쓰세요",
+      placeholder: showEnglish ? "뜻을 한글로 쓰세요" : "영어 단어를 쓰세요",
       autocapitalize: "off",
       autocomplete: "off",
       value: answers[i] || "",
@@ -84,14 +90,14 @@ export async function render(container) {
   async function finish() {
     signal.cancelled = true;
     cancelSpeech();
-    const marks = items.map((w, idx) => (part === 1 ? isKoCorrect(answers[idx], w.ko) : isEnCorrect(answers[idx], w.en)));
+    const marks = items.map((w, idx) => (showsEnglish(w) ? isKoCorrect(answers[idx], w.ko) : isEnCorrect(answers[idx], w.en)));
     const correctCount = marks.filter(Boolean).length;
     const score = Math.round((correctCount / items.length) * 100);
     const wrongWords = items.filter((_, idx) => !marks[idx]);
 
     await addRecord({
       subject: "en",
-      setLabel: `${unitLabel} 시험${part}`,
+      setLabel: `${unitLabel} ${titleLabel}`,
       score,
       wrong: wrongWords.map((w) => `${w.en} (${w.ko.join(", ")})`),
     });

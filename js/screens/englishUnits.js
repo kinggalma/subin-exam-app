@@ -52,6 +52,14 @@ export async function render(container) {
     return units.filter((u) => selected.has(u.unit)).flatMap((u) => u.words);
   }
 
+  // 실제 기말고사(Final Word Test) 형식: 각 유닛의 앞 절반은 영→한, 뒤 절반은 한→영으로 출제된다
+  function getMixedWords() {
+    return units.filter((u) => selected.has(u.unit)).flatMap((u) => {
+      const half = Math.ceil(u.words.length / 2);
+      return u.words.map((w) => ({ ...w, dir: w.no <= half ? "en2ko" : "ko2en" }));
+    });
+  }
+
   container.appendChild(
     screen([
       topbar("영어 단어", { onBack: () => navigate("/home") }),
@@ -84,6 +92,15 @@ export async function render(container) {
             navigate("/english/quiz", { part: 2, unitLabel: label, words });
           },
         }, "시험2 (한→영)"),
+        el("button", {
+          class: "big-btn primary",
+          onClick: () => {
+            const words = getMixedWords();
+            if (!words.length) { showToast("유닛을 하나 이상 선택해 주세요."); return; }
+            const label = [...selected].join(" + ");
+            navigate("/english/quiz", { part: "mixed", unitLabel: label, words });
+          },
+        }, "실전 시험 (앞 영→한 · 뒤 한→영)"),
       ]),
     ])
   );

@@ -325,7 +325,7 @@ button {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 49;
+  z-index: 51;
 }
 .confetti span {
   position: absolute;
@@ -340,7 +340,7 @@ button {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 49;
+  z-index: 51;
 }
 .firework-burst {
   position: absolute;
