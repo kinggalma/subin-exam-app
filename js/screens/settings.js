@@ -171,11 +171,13 @@ export async function render(container) {
   const rewardCard = el("div", { class: "card" });
   rewardCard.appendChild(el("div", { class: "section-title" }, "🎁 100점 보상 영상"));
   const existingVideos = await DB.getAll("rewards");
-  const videoList = el("div", {}, existingVideos.map((v) => {
+  function videoRow(v) {
     const startInput = el("input", { type: "number", min: "0", value: String(v.start || ""), placeholder: "0", style: "width:64px" });
     const secInput = el("input", { type: "number", min: "3", max: "120", value: String(v.seconds || ""), placeholder: "기본", style: "width:64px" });
     return el("div", { class: "record-item" }, [
-      el("div", {}, v.youtubeId ? `▶ YouTube: ${v.name}` : v.name),
+      v.youtubeId
+        ? el("a", { href: `https://youtu.be/${v.youtubeId}`, target: "_blank", rel: "noopener" }, `▶ YouTube: ${v.name}`)
+        : el("div", {}, v.name),
       el("label", { style: "display:flex;align-items:center;gap:4px;font-size:0.85rem;color:#999" }, ["시작(초)", startInput]),
       el("label", { style: "display:flex;align-items:center;gap:4px;font-size:0.85rem;color:#999" }, ["재생(초)", secInput]),
       el("button", {
@@ -188,7 +190,16 @@ export async function render(container) {
       }, "💾"),
       el("button", { class: "icon-btn", onClick: async () => { await DB.delete("rewards", v.id); navigate("/settings"); } }, "🗑"),
     ]);
-  }));
+  }
+  const fileVideos = existingVideos.filter((v) => !v.youtubeId);
+  const ytVideos = existingVideos.filter((v) => v.youtubeId);
+  const videoList = el("div", {}, [
+    fileVideos.length ? el("div", { style: "font-size:0.85rem;color:#999;margin-top:6px" }, `📁 업로드한 영상/음악 (${fileVideos.length}개)`) : null,
+    ...fileVideos.map(videoRow),
+    ytVideos.length ? el("div", { style: "font-size:0.85rem;color:#999;margin-top:6px" }, `▶ 유튜브 영상 (${ytVideos.length}개)`) : null,
+    ...ytVideos.map(videoRow),
+    !existingVideos.length ? el("div", { class: "empty-state" }, "등록된 보상 영상이 없습니다.") : null,
+  ]);
   const fileInput = el("input", { type: "file", accept: "video/*,audio/*", multiple: "true" });
   const startDefaultInput = el("input", { type: "number", min: "0", value: "0", style: "width:64px" });
   const secDefaultInput = el("input", { type: "number", min: "3", max: "120", value: "10", style: "width:64px" });
