@@ -136,7 +136,7 @@ export async function render(container) {
   // ---- 받아쓰기 진행 설정 ----
   const playCard = el("div", { class: "card" });
   playCard.appendChild(el("div", { class: "section-title" }, "📝 받아쓰기 진행 설정"));
-  const writeSecInput = el("input", { type: "number", min: "10", max: "30", value: String(await kvGet("korean.writeSeconds", 15)) });
+  const writeSecInput = el("input", { type: "number", min: "10", max: "120", value: String(await kvGet("korean.writeSeconds", 15)) });
   const repeatToggle = el("input", { type: "checkbox" });
   repeatToggle.checked = await kvGet("korean.repeatButtonEnabled", true);
   const ignorePunctToggle = el("input", { type: "checkbox" });
@@ -149,7 +149,7 @@ export async function render(container) {
   const favGradeSelect = el("select", {}, [el("option", { value: "" }, "(없음)"), ...koreanGrades.map((g) => el("option", { value: String(g.grade) }, `${g.grade}급`))]);
   favGradeSelect.value = String((await kvGet("korean.favGrade", "")) || "");
 
-  playCard.appendChild(el("label", { class: "field" }, ["쓰는 시간(초, 10~30)", writeSecInput]));
+  playCard.appendChild(el("label", { class: "field" }, ["쓰는 시간(초, 10~120)", writeSecInput]));
   playCard.appendChild(el("label", { class: "field", style: "flex-direction:row;align-items:center;gap:10px" }, [repeatToggle, el("span", {}, "'한 번 더 듣기' 버튼 보이기")]));
   playCard.appendChild(el("label", { class: "field", style: "flex-direction:row;align-items:center;gap:10px" }, [ignorePunctToggle, el("span", {}, "화면 입력 채점 시 문장부호 무시")]));
   playCard.appendChild(el("label", { class: "field" }, ["기본 답 쓰는 방법", answerModeSelect]));
@@ -157,7 +157,7 @@ export async function render(container) {
   playCard.appendChild(el("button", {
     class: "big-btn primary",
     onClick: async () => {
-      await kvSet("korean.writeSeconds", Math.min(30, Math.max(10, Number(writeSecInput.value) || 15)));
+      await kvSet("korean.writeSeconds", Math.min(120, Math.max(10, Number(writeSecInput.value) || 15)));
       await kvSet("korean.repeatButtonEnabled", repeatToggle.checked);
       await kvSet("korean.ignorePunctuation", ignorePunctToggle.checked);
       await kvSet("korean.answerMode", answerModeSelect.value);
