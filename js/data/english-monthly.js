@@ -3,5 +3,6 @@
 // main.js가 앱 시작 시 이 목록을 기존 데이터와 병합해서, 이미 저장된 교재나
 // 기록은 그대로 두고 "아직 없는 유닛"만 추가한다.
 import { PACK_2026_10 } from "./english-2026-10.js";
+import { PACK_2026_11 } from "./english-2026-11.js";
 
-export const MONTHLY_PACKS = [PACK_2026_10];
+export const MONTHLY_PACKS = [PACK_2026_10, PACK_2026_11];
