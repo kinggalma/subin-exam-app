@@ -71,9 +71,18 @@ export async function render(container) {
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") goNext(); });
     body.appendChild(input);
     body.appendChild(el("div", { class: "play-actions" }, [
+      i > 0 ? el("button", { class: "big-btn ghost", onClick: goPrev }, "◀ 이전") : null,
       el("button", { class: "big-btn primary", onClick: goNext }, i === items.length - 1 ? "결과 보기" : "다음 ▶"),
     ]));
     setTimeout(() => input.focus(), 50);
+
+    function goPrev() {
+      signal.cancelled = true;
+      cancelSpeech();
+      answers[i] = input.value;
+      i -= 1;
+      renderQuestion();
+    }
 
     function goNext() {
       signal.cancelled = true;

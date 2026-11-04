@@ -44,8 +44,9 @@ export async function render(container) {
     body.appendChild(ring);
     if (input) body.appendChild(input);
     const repeatBtn = el("button", { class: "big-btn secondary", onClick: () => replay() }, "🔁 한 번 더 듣기");
+    const prevBtn = el("button", { class: "big-btn ghost", onClick: () => goBack() }, "◀ 이전");
     const nextBtn = el("button", { class: "big-btn primary", onClick: () => advance() }, i === items.length - 1 ? "결과 보기" : "다음 ▶");
-    const actions = el("div", { class: "play-actions" }, [repeatEnabled ? repeatBtn : null, nextBtn]);
+    const actions = el("div", { class: "play-actions" }, [i > 0 ? prevBtn : null, repeatEnabled ? repeatBtn : null, nextBtn]);
     body.appendChild(actions);
 
     let advanced = false;
@@ -94,7 +95,17 @@ export async function render(container) {
       if (countdownHandle) clearInterval(countdownHandle);
       if (input) answers[i] = input.value;
       cancelSpeech();
-      resolveItem();
+      resolveItem(1);
+    }
+
+    function goBack() {
+      if (advanced || i === 0) return;
+      advanced = true;
+      itemSignal.cancelled = true;
+      if (countdownHandle) clearInterval(countdownHandle);
+      if (input) answers[i] = input.value;
+      cancelSpeech();
+      resolveItem(-1);
     }
 
     nextBtn.onclick = advance;
@@ -106,12 +117,14 @@ export async function render(container) {
     doReadingSequence(itemSignal).then(() => {
       if (!cancelToken.cancelled && !itemSignal.cancelled && !advanced) startCountdown();
     });
-    await donePromise;
+    return donePromise;
   }
 
-  for (let i = 0; i < items.length; i++) {
-    await runItem(i);
+  let i = 0;
+  while (i < items.length) {
+    const direction = await runItem(i);
     if (cancelToken.cancelled) return;
+    i += direction;
   }
 
   navigate("/korean/grade", { grade, title, items, mode, answers });
