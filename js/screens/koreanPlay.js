@@ -1,4 +1,4 @@
-import { el, screen, topbar } from "../ui.js";
+import { el, screen, topbar, pauseButton, showPauseOverlay } from "../ui.js";
 import { navigate, getSessionData } from "../router.js";
 import { kvGet } from "../db.js";
 import { speakKoreanSentence, cancelSpeech } from "../tts.js";
@@ -21,9 +21,24 @@ export async function render(container) {
 
   const answers = new Array(items.length).fill("");
   let cancelToken = { cancelled: false };
+  const pauseControls = { pause: null, resume: null };
+
+  function leavePlay() {
+    cancelToken.cancelled = true;
+    cancelSpeech();
+    navigate("/korean/select");
+  }
+
+  function openPause() {
+    if (pauseControls.pause) pauseControls.pause();
+    showPauseOverlay({
+      onResume: () => { if (pauseControls.resume) pauseControls.resume(); },
+      onQuit: leavePlay,
+    });
+  }
 
   const main = screen([
-    topbar(`국어 ${grade}급`, { onBack: () => { cancelToken.cancelled = true; cancelSpeech(); navigate("/korean/select"); } }),
+    topbar(`국어 ${grade}급`, { onBack: leavePlay, right: pauseButton(openPause) }),
   ]);
   const body = el("div", { class: "play-card" });
   main.appendChild(body);
@@ -51,7 +66,32 @@ export async function render(container) {
 
     let advanced = false;
     let countdownHandle = null;
+    let inCountdown = false;
+    let remaining = writeSeconds;
     const sig = {};
+
+    function tickCountdown() {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(countdownHandle);
+        countdownHandle = null;
+        advance();
+        return;
+      }
+      timerSpan.textContent = `${remaining}초`;
+      ring.style.setProperty("--pct", String(Math.round((remaining / writeSeconds) * 100)));
+    }
+
+    pauseControls.pause = () => {
+      if (advanced) return;
+      if (countdownHandle) { clearInterval(countdownHandle); countdownHandle = null; }
+      speechSynthesis.pause();
+    };
+    pauseControls.resume = () => {
+      if (advanced) return;
+      speechSynthesis.resume();
+      if (inCountdown && !countdownHandle) countdownHandle = setInterval(tickCountdown, 1000);
+    };
 
     async function doReadingSequence(signal) {
       timerSpan.textContent = "듣는 중 🔊";
@@ -64,25 +104,18 @@ export async function render(container) {
 
     async function startCountdown() {
       if (cancelToken.cancelled || advanced) return;
-      let remaining = writeSeconds;
+      inCountdown = true;
+      remaining = writeSeconds;
       ring.style.setProperty("--pct", "100");
       timerSpan.textContent = `${remaining}초`;
-      countdownHandle = setInterval(() => {
-        remaining -= 1;
-        if (remaining <= 0) {
-          clearInterval(countdownHandle);
-          advance();
-          return;
-        }
-        timerSpan.textContent = `${remaining}초`;
-        ring.style.setProperty("--pct", String(Math.round((remaining / writeSeconds) * 100)));
-      }, 1000);
+      countdownHandle = setInterval(tickCountdown, 1000);
     }
 
     async function replay() {
       itemSignal.cancelled = true;
       cancelSpeech();
-      if (countdownHandle) clearInterval(countdownHandle);
+      if (countdownHandle) { clearInterval(countdownHandle); countdownHandle = null; }
+      inCountdown = false;
       itemSignal = { cancelled: false };
       await doReadingSequence(itemSignal);
       if (!cancelToken.cancelled && !itemSignal.cancelled) startCountdown();

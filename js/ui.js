@@ -41,6 +41,23 @@ export function todayStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+export function pauseButton(onClick) {
+  return el("button", { class: "icon-btn", onClick, "aria-label": "일시정지" }, "⏸");
+}
+
+export function showPauseOverlay({ onResume, onQuit } = {}) {
+  const overlay = el("div", { class: "pause-overlay" }, [
+    el("div", { class: "pause-icon" }, "⏸️"),
+    el("h2", {}, "잠깐 쉬어요"),
+    el("div", { class: "play-actions" }, [
+      onQuit ? el("button", { class: "big-btn ghost", onClick: () => { overlay.remove(); onQuit(); } }, "그만하기") : null,
+      el("button", { class: "big-btn primary", onClick: () => { overlay.remove(); if (onResume) onResume(); } }, "계속하기 ▶"),
+    ]),
+  ]);
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
 export function showToast(message) {
   const toast = el("div", {
     style: "position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#2d2a32;color:#fff;padding:14px 22px;border-radius:14px;font-size:1rem;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,0.25);z-index:60;max-width:90vw;text-align:center",

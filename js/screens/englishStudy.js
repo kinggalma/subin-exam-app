@@ -1,4 +1,4 @@
-import { el, screen, topbar } from "../ui.js";
+import { el, screen, topbar, pauseButton, showPauseOverlay } from "../ui.js";
 import { navigate, getSessionData } from "../router.js";
 import { speakEnglish, speakEnglishTwice, cancelSpeech } from "../tts.js";
 import { kvGet } from "../db.js";
@@ -19,7 +19,12 @@ export async function render(container) {
     navigate("/english/units");
   }
 
-  const main = screen([topbar(`공부하기 — ${unitLabel}`, { onBack: leaveStudy })]);
+  function openPause() {
+    speechSynthesis.pause();
+    showPauseOverlay({ onResume: () => speechSynthesis.resume(), onQuit: leaveStudy });
+  }
+
+  const main = screen([topbar(`공부하기 — ${unitLabel}`, { onBack: leaveStudy, right: pauseButton(openPause) })]);
   const body = el("div", { class: "word-card" });
   main.appendChild(body);
   container.appendChild(main);

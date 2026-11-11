@@ -1,4 +1,4 @@
-import { el, screen, topbar, shuffle } from "../ui.js";
+import { el, screen, topbar, shuffle, pauseButton, showPauseOverlay } from "../ui.js";
 import { navigate, getSessionData } from "../router.js";
 import { speakEnglishTwice, cancelSpeech } from "../tts.js";
 import { kvGet } from "../db.js";
@@ -41,7 +41,12 @@ export async function render(container) {
     navigate("/english/units");
   }
 
-  const main = screen([topbar(`${titleLabel} — ${unitLabel}`, { onBack: leaveQuiz })]);
+  function openPause() {
+    speechSynthesis.pause();
+    showPauseOverlay({ onResume: () => speechSynthesis.resume(), onQuit: leaveQuiz });
+  }
+
+  const main = screen([topbar(`${titleLabel} — ${unitLabel}`, { onBack: leaveQuiz, right: pauseButton(openPause) })]);
   const body = el("div", { class: "word-card" });
   main.appendChild(body);
   container.appendChild(main);
